@@ -3,6 +3,7 @@
   fetchFromGitHub,
   getent,
   lib,
+  installShellFiles,
   makeWrapper,
   stdenv,
   xdg-utils,
@@ -19,14 +20,19 @@ buildGoModule rec {
   };
   vendorHash = "sha256-a57RtK8PxwaRrSA6W6R//GacZ+pK8mBi4ZASS5NvShE=";
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ installShellFiles makeWrapper ];
 
   ldflags = [
     "-X main.Version=${version}"
     "-X main.Tag=nixpkgs"
   ];
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform == stdenv.targetPlatform) ''
+    installShellCompletion --cmd aws-sso \
+      --bash <($out/bin/aws-sso setup completions --source --shell=bash) \
+      --fish <($out/bin/aws-sso setup completions --source --shell=fish) \
+      --zsh <($out/bin/aws-sso setup completions --source --shell=zsh)
+  '' + ''
     wrapProgram $out/bin/aws-sso \
       --suffix PATH : ${lib.makeBinPath [ xdg-utils ]}
   '';
