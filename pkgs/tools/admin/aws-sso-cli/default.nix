@@ -23,7 +23,12 @@ buildGoModule rec {
     "-X main.Tag=nixpkgs"
   ];
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform == stdenv.targetPlatform) ''
+    installShellCompletion --cmd aws-sso \
+      --bash <($out/bin/aws-sso completions --source --shell=bash) \
+      --fish <($out/bin/aws-sso completions --source --shell=fish) \
+      --zsh <($out/bin/aws-sso completions --source --shell=zsh)
+  '' + ''
     wrapProgram $out/bin/aws-sso \
       --suffix PATH : ${lib.makeBinPath [ xdg-utils ]}
   '';
