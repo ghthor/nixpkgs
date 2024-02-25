@@ -11197,6 +11197,8 @@ with pkgs;
 
   nomad-driver-podman = callPackage ../applications/networking/cluster/nomad-driver-podman { };
 
+  nomad-device-nvidia = callPackage ../applications/networking/cluster/nomad-device-nvidia { };
+
   nomad-pack = callPackage ../applications/networking/cluster/nomad-pack { };
 
   nova = callPackage ../applications/networking/cluster/nova { };
