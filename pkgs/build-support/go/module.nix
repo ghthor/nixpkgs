@@ -86,8 +86,6 @@ let
       "GIT_PROXY_COMMAND"
       "SOCKS_SERVER"
       "GOPROXY"
-      "GOMODCACHE"
-      "GOCACHE"
     ];
 
     configurePhase = args.modConfigurePhase or ''
@@ -96,9 +94,7 @@ let
       fi
 
       runHook preConfigure
-      if [ -z $GOCACHE ]; then
-        export GOCACHE=$TMPDIR/go-cache
-      fi
+      export GOCACHE=$TMPDIR/go-cache
       export GOPATH="$TMPDIR/go"
       cd "${modRoot}"
       runHook postConfigure
@@ -123,14 +119,14 @@ let
       '' else if proxyVendor then ''
         mkdir -p "''${GOPATH}/pkg/mod/cache/download"
         go mod download
+        mkdir -p vendor
       '' else ''
         if (( "''${NIX_DEBUG:-0}" >= 1 )); then
           goModVendorFlags+=(-v)
         fi
         go mod vendor "''${goModVendorFlags[@]}"
+        mkdir -p vendor
       ''}
-
-      mkdir -p vendor
 
       runHook postBuild
     '');
@@ -167,7 +163,7 @@ let
 
     inherit (go) GOOS GOARCH;
 
-    GOFLAGS = lib.optionals (!proxyVendor) [ "-mod=vendor" ] ++ lib.optionals (!allowGoReference) [ "-trimpath" ];
+    GOFLAGS = lib.optionals (!proxyVendor || !vendorHashGoSum) [ "-mod=vendor" ] ++ lib.optionals (!allowGoReference) [ "-trimpath" ];
     inherit CGO_ENABLED enableParallelBuilding GO111MODULE GOTOOLCHAIN;
 
     # If not set to an explicit value, set the buildid empty for reproducibility.
@@ -175,17 +171,13 @@ let
 
     impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
       "GOPROXY"
-      "GOMODCACHE"
-      "GOCACHE"
       "GOSUMDB"
     ];
 
     configurePhase = args.configurePhase or (''
       runHook preConfigure
 
-      if [ -z $GOCACHE ]; then
-        export GOCACHE=$TMPDIR/go-cache
-      fi
+      export GOCACHE=$TMPDIR/go-cache
       export GOPATH="$TMPDIR/go"
       if [ -z GOPROXY ]; then
         export GOPROXY=off
