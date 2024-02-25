@@ -163,7 +163,8 @@ let
 
     inherit (go) GOOS GOARCH;
 
-    GOFLAGS = lib.optionals (!proxyVendor || !vendorHashGoSum) [ "-mod=vendor" ] ++ lib.optionals (!allowGoReference) [ "-trimpath" ];
+    # GOFLAGS = lib.optionals (!proxyVendor || !vendorHashGoSum) [ "-mod=vendor" ] ++ lib.optionals (!allowGoReference) [ "-trimpath" ];
+    GOFLAGS = lib.optionals (!allowGoReference) [ "-trimpath" ];
     inherit CGO_ENABLED enableParallelBuilding GO111MODULE GOTOOLCHAIN;
 
     # If not set to an explicit value, set the buildid empty for reproducibility.
