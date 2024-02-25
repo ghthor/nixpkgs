@@ -25,6 +25,9 @@
   # conflicts which will produce platform dependant `vendorHash` checksums.
 , proxyVendor ? false
 
+  # Whether to use the go.sum file as the outputHash
+, vendorHashGoSum ? false
+
   # We want parallel builds by default
 , enableParallelBuilding ? true
 
@@ -83,11 +86,19 @@ let
       "GIT_PROXY_COMMAND"
       "SOCKS_SERVER"
       "GOPROXY"
+      "GOMODCACHE"
+      "GOCACHE"
     ];
 
     configurePhase = args.modConfigurePhase or ''
+      if (( "''${NIX_DEBUG:-0}" >= 1 )); then
+        go env | sort
+      fi
+
       runHook preConfigure
-      export GOCACHE=$TMPDIR/go-cache
+      if [ -z $GOCACHE ]; then
+        export GOCACHE=$TMPDIR/go-cache
+      fi
       export GOPATH="$TMPDIR/go"
       cd "${modRoot}"
       runHook postConfigure
@@ -108,7 +119,8 @@ let
         exit 10
       fi
 
-      ${if proxyVendor then ''
+      ${if vendorHashGoSum then ''
+      '' else if proxyVendor then ''
         mkdir -p "''${GOPATH}/pkg/mod/cache/download"
         go mod download
       '' else ''
@@ -126,7 +138,9 @@ let
     installPhase = args.modInstallPhase or ''
       runHook preInstall
 
-      ${if proxyVendor then ''
+      ${if vendorHashGoSum then ''
+        cp -r --reflink=auto go.sum $out
+      '' else if proxyVendor then ''
         rm -rf "''${GOPATH}/pkg/mod/cache/download/sumdb"
         cp -r --reflink=auto "''${GOPATH}/pkg/mod/cache/download" $out
       '' else ''
@@ -159,16 +173,32 @@ let
     # If not set to an explicit value, set the buildid empty for reproducibility.
     ldflags = ldflags ++ lib.optionals (!lib.any (lib.hasPrefix "-buildid=") ldflags) [ "-buildid=" ];
 
+    impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
+      "GOPROXY"
+      "GOMODCACHE"
+      "GOCACHE"
+      "GOSUMDB"
+    ];
+
     configurePhase = args.configurePhase or (''
       runHook preConfigure
 
-      export GOCACHE=$TMPDIR/go-cache
+      if [ -z $GOCACHE ]; then
+        export GOCACHE=$TMPDIR/go-cache
+      fi
       export GOPATH="$TMPDIR/go"
-      export GOPROXY=off
-      export GOSUMDB=off
+      if [ -z GOPROXY ]; then
+        export GOPROXY=off
+      fi
+      if [ -z GOSUMDB ]; then
+        export GOSUMDB=off
+      fi
       cd "$modRoot"
     '' + lib.optionalString (vendorHash != null) ''
-      ${if proxyVendor then ''
+      ${if vendorHashGoSum then ''
+        rm -f go.sum
+        cp -r --reflink=auto ${goModules} go.sum
+      '' else if proxyVendor then ''
         export GOPROXY=file://${goModules}
       '' else ''
         rm -rf vendor
@@ -238,6 +268,7 @@ let
 
       if (( "''${NIX_DEBUG:-0}" >= 1 )); then
         buildFlagsArray+=(-x)
+        go env | sort
       fi
 
       if [ ''${#buildFlagsArray[@]} -ne 0 ]; then
