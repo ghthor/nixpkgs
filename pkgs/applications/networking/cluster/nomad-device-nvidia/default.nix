@@ -22,9 +22,11 @@ buildGoModule rec {
   ];
 
   postInstall = ''
-    mv $out/bin/main $out/bin/nomad-device-nvidia
-    wrapProgram "$out/bin/nomad-device-nvidia" \
+    mkdir $out/wrapped # need to put it somewhere nomad wont try and load it
+    mv $out/bin/main $out/wrapped/nomad-device-nvidia
+    wrapProgram "$out/wrapped/nomad-device-nvidia" \
       --prefix LB_LIBRARY_PATH ":" "${pkgs.linuxPackages.nvidia_x11}/lib"
+    mv $out/wrapped/nomad-device-nvidia $out/bin/
   '';
   # TODO(ghthor): enable
   # doCheck = false;
