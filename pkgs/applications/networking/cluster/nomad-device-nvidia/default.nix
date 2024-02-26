@@ -15,14 +15,18 @@ buildGoModule rec {
 
   subPackages = [ "./cmd/main.go" ];
 
-  runtimeDependencies = [
+  buildInputs = [
     pkgs.cudatoolkit
+    pkgs.linuxPackages.nvidia_x11
+    pkgs.makeWrapper
   ];
 
   postInstall = ''
     mv $out/bin/main $out/bin/nomad-device-nvidia
+    wrapProgram "$out/bin/nomad-device-nvidia" \
+      --prefix LB_LIBRARY_PATH ":" "${pkgs.linuxPackages.nvidia_x11}/lib"
   '';
-  # some tests require a running podman service
+  # TODO(ghthor): enable
   # doCheck = false;
 
   meta = with lib; {
