@@ -17531,12 +17531,12 @@ final: prev:
 
   vim-tabby = buildVimPlugin {
     pname = "vim-tabby";
-    version = "2024-10-17";
+    version = "2024-03-01";
     src = fetchFromGitHub {
       owner = "TabbyML";
       repo = "vim-tabby";
-      rev = "b29c0681569fcc9857ff13835afec2dda9b8d90f";
-      sha256 = "0j87agcir467m0k5ln98crxsv8yf8cvya5l869r36m6czfm42l53";
+      rev = "afd76df166ed0f223ede1071e0cfde8075cc4a24";
+      sha256 = "sha256-z6SlQpLJSgeKvgYyplsS5c0KL89oEYm4BgDMkmpg5XI=";
     };
     meta.homepage = "https://github.com/TabbyML/vim-tabby/";
   };
