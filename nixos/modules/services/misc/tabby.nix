@@ -20,6 +20,14 @@ in
 
       package = lib.mkPackageOption pkgs "tabby" { };
 
+      host = lib.mkOption {
+        type = types.str;
+        default = "127.0.0.1";
+        description = ''
+          Specifies the hostname on which the tabby server HTTP interface listens.
+        '';
+      };
+
       port = lib.mkOption {
         type = types.port;
         default = 11029;
@@ -134,7 +142,7 @@ in
           serviceUser
           {
             ExecStart =
-              "${lib.getExe tabbyPackage} serve --model ${cfg.model} --port ${toString cfg.port} --device ${tabbyPackage.featureDevice}";
+              "${lib.getExe tabbyPackage} serve --model ${cfg.model} --host ${cfg.host} --port ${toString cfg.port} --device ${tabbyPackage.featureDevice}";
           }
         ];
       };
